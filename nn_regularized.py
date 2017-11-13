@@ -1,3 +1,8 @@
+''' nn with 2 regularization techniques
+1) l2 regularization
+2) dropout regularization
+algorithm : batch gradient descent'''
+
 # import usefull packages
 import numpy as np
 import matplotlib.pyplot as plt
