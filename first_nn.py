@@ -1,7 +1,8 @@
 ''' basic naural network , according to course 1,
 without regularization,
 batch gradient descent
-wihtout gradient checking '''
+wihtout gradient checking
+based on course 1 '''
 # import usefull packages
 import numpy as np
 import matplotlib.pyplot as plt
