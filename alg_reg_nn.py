@@ -1,3 +1,7 @@
+''' nn
+regularized: 2 techniques,(l2, dropout)
+algorithm : better than batch : adam
+based on course2, week2'''
 # import usefull packages
 import numpy as np
 import matplotlib.pyplot as plt
@@ -292,9 +296,10 @@ def update_parameters(parameters, grads , learning_rate ,\
     grads -- a dictionary of gradient of Wi and bi for i=1,...,L
     learning_rate
     S_dwdb -- second momentum (RMS prop)
-    beta2 -- related parameter to S
+    beta2 --  parameter controls exponentially weighted average of square of
+     gradiend (S)
     V_dwdb -- first momentum (momentum technique)
-    beta1 -- related parameter to V
+    beta1 -- parameter controls exponentially weighted average of gradient(V)
     epsilon -- small number fo computational stability
     iter_mimi_batch -- total number of mii batch passed so far
 
@@ -306,16 +311,16 @@ def update_parameters(parameters, grads , learning_rate ,\
     for l in range(1, L+1):
         assert(V_dwdb["W{0}".format(l)].shape == grads["dW{0}".format(l)].shape)
         # momentun
-        V_dwdb["W{0}".format(l)] = beta1 * V_dwdb["W{0}".format(l)] +
+        V_dwdb["W{0}".format(l)] = beta1 * V_dwdb["W{0}".format(l)] +\
         (1 - beta1)*grads["dW{0}".format(l)]
 
-        V_dwdb["b{0}".format(l)] = beta1 * V_dwdb["b{0}".format(l)] +
+        V_dwdb["b{0}".format(l)] = beta1 * V_dwdb["b{0}".format(l)] +\
         (1 - beta1)*grads["db{0}".format(l)]
         # RMS prob
-        S_dwdb["W{0}".format(l)] = beta2 * S_dwdb["W{0}".format(l)] +
+        S_dwdb["W{0}".format(l)] = beta2 * S_dwdb["W{0}".format(l)] +\
         (1 - beta2)* (grads["dW{0}".format(l)]**2)
 
-        S_dwdb["b{0}".format(l)] = beta2 * S_dwdb["b{0}".format(l)] +
+        S_dwdb["b{0}".format(l)] = beta2 * S_dwdb["b{0}".format(l)] +\
         (1 - beta2)* (grads["db{0}".format(l)] **2)
 
         #Bias correction
@@ -343,9 +348,9 @@ def update_parameters(parameters, grads , learning_rate ,\
 
 
 
-def train_nn(X_original, Y_original, L = 2, n_hidden = None, n_epoch = 1000,\
-,learning_rate = 1.2, print_cost = False, activation_hidden = "Relu",
-keep_prob =1., keep_prob_l = None, lamb = 0., random_state = 42
+def train_nn(X_original, Y_original, L = 2, n_hidden = None, n_epoch = 1000,
+learning_rate = 1.2, print_cost = False, activation_hidden = "Relu",
+keep_prob =1., keep_prob_l = None, lamb = 0., random_state = 42,
 batch_size = 2**6, alpha0 = .2, decay_rate = 1,
 beta1 = .9, beta2 = .999, epsilon = 1e-8):
     ''' train neural network
@@ -364,17 +369,9 @@ beta1 = .9, beta2 = .999, epsilon = 1e-8):
 
     output: parameters for all layers after training
     '''
-    # make a copy of x and y
-    X = np.copy(X_original)
-    Y = np.copy(Y_original)
+    m = X_original.shape[1] # number of data points
 
-    m = X.shape[1] # number of data points
-
-    # shuffle data
-    np.random.seed(seed)
-    indices = np.random.permutation(m)
-    X = X[:, indices]
-    Y = Y[:, indices]
+    seed = random_state
 
     assert (lamb == 0. or keep_prob ==1.) # use just one of regularization technique
 
@@ -396,6 +393,13 @@ beta1 = .9, beta2 = .999, epsilon = 1e-8):
 
     # loop for gradient descent converge
     for i in range(n_epoch):
+        # shuffle data
+        seed = seed + 1
+        np.random.seed(seed)
+        indices = np.random.permutation(m)
+        X = X_original[:, indices]
+        Y = Y_original[:, indices].reshape(1, -1)
+
         for t in range(T):
 
             iter_mimi_batch = T *i + t
@@ -407,7 +411,7 @@ beta1 = .9, beta2 = .999, epsilon = 1e-8):
             Y_hat, cache = forward_propagation(X[:, window],
             parameters, keep_prob, keep_prob_l, activation_hidden, random_state)
 
-            grads = backward_propagation(Y[0, window], parameters, cache,
+            grads = backward_propagation(Y[:, window].reshape(1, -1), parameters, cache,
             lamb, keep_prob, keep_prob_l,activation_hidden)
 
             learning_rate = (1./(1 + (decay_rate * i)))* alpha0
